@@ -1,0 +1,54 @@
+---
+- name: Clone Build Piper repository
+  git:
+    repo: "{{ bitbucket_repo }}"
+    dest: "{{ clone_dir }}"
+    version: "{{ repo_version }}"
+    force: yes
+
+- name: Ensure buildpiper home directory exists
+  file:
+    path: "{{ buildpiper_home }}"
+    state: directory
+    owner: "{{ buildpiper_user }}"
+    group: "{{ buildpiper_group }}"
+    mode: '0755'
+  become: true
+
+- name: Copy deploy_buildpiper to buildpiper home
+  copy:
+    src: "{{ clone_dir }}"
+    dest: "{{ buildpiper_home }}/"
+    owner: "{{ buildpiper_user }}"
+    group: "{{ buildpiper_group }}"
+    mode: '0755'
+    remote_src: yes
+  become: true
+
+- name: Ensure .docker directory exists for buildpiper
+  file:
+    path: "{{ buildpiper_home }}/.docker"
+    state: directory
+    owner: "{{ buildpiper_user }}"
+    group: "{{ buildpiper_group }}"
+    mode: '0700'
+  become: true
+
+- name: Fix permissions on Docker config if exists
+  file:
+    path: "{{ buildpiper_home }}/.docker/config.json"
+    state: touch
+    owner: "{{ buildpiper_user }}"
+    group: "{{ buildpiper_group }}"
+    mode: '0600'
+  become: true
+
+- name: Docker login as buildpiper
+  become: true
+  shell: |
+    echo "{{ registry_password }}" | docker login {{ registry_url }} -u {{ registry_user }} --password-stdin
+  environment:
+    HOME: "{{ buildpiper_home }}"
+    USER: "{{ buildpiper_user }}"
+  args:
+    chdir: "{{ buildpiper_home }}"

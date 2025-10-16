@@ -1,0 +1,23 @@
+---
+# main tasks file for bp_role
+
+- name: Include base system setup
+  include_tasks: base_setup.yml
+
+- name: Install Python
+  include_tasks: python_install.yml
+
+- name: Install Docker
+  include_tasks: docker_install.yml
+
+- name: Setup BuildPiper user and directories
+  include_tasks: user_setup.yml
+
+- name: Clone and setup repository
+  include_tasks: repo_setup.yml
+
+- name: Configure BuildPiper settings
+  include_tasks: config_setup.yml
+
+- name: Start BuildPiper services
+  include_tasks: service_start.yml

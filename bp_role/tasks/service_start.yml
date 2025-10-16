@@ -1,0 +1,18 @@
+---
+- name: Stop running BuildPiper containers
+  shell: docker compose down
+  args:
+    chdir: "{{ deploy_dir }}"
+  ignore_errors: yes
+
+- name: Start only DB and Redis containers
+  shell: |
+    sudo su - {{ buildpiper_user }} -c 'cd {{ deploy_dir }} && docker compose up -d db redis'
+
+- name: Wait for 30 seconds to let DB and Redis initialize
+  pause:
+    seconds: 30
+
+- name: Start remaining BuildPiper containers
+  shell: |
+    sudo su - {{ buildpiper_user }} -c 'cd {{ deploy_dir }} && docker compose up -d publicapi deployapi frontend scheduledapi bp_agent'

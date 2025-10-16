@@ -1,0 +1,11 @@
+---
+galaxy_info:
+  author: Yuvraj Singh
+  description: Setup for Build Piper Non-root Deployment
+  platforms:
+    - name: Ubuntu
+      versions:
+        - noble
+        - jammy
+  license: MIT
+dependencies: []

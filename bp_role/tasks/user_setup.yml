@@ -1,0 +1,68 @@
+---
+- name: Ensure buildpiper group exists
+  group:
+    name: "{{ buildpiper_group }}"
+    state: present
+  become: true
+
+- name: Ensure buildpiper user exists
+  user:
+    name: "{{ buildpiper_user }}"
+    group: "{{ buildpiper_group }}"
+    shell: /bin/bash
+    create_home: yes
+  become: true
+
+- name: Ensure sudo package is installed
+  apt:
+    name: sudo
+    state: present
+    update_cache: yes
+  become: true
+
+- name: Allow passwordless sudo for buildpiper
+  copy:
+    dest: /etc/sudoers.d/buildpiper
+    content: "{{ buildpiper_user }} ALL=(ALL) NOPASSWD: ALL\n"
+    owner: root
+    group: root
+    mode: '0440'
+  become: true
+
+- name: Create BuildPiper required directories
+  become: true
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ buildpiper_user }}"
+    group: "{{ buildpiper_group }}"
+    mode: '0770'
+  loop: "{{ buildpiper_directories }}"
+
+- name: Fix directory permissions recursively
+  become: true
+  file:
+    path: "{{ item }}"
+    owner: "{{ buildpiper_user }}"
+    group: "{{ buildpiper_group }}"
+    mode: '0770'
+    recurse: yes
+  loop: "{{ buildpiper_directories }}"
+
+- name: Ensure Docker socket permissions
+  become: true
+  file:
+    path: /var/run/docker.sock
+    owner: "{{ buildpiper_user }}"
+    group: docker
+    state: file
+  ignore_errors: yes
+
+- name: Ensure Docker config directory permissions
+  become: true
+  file:
+    path: /etc/docker
+    owner: "{{ buildpiper_user }}"
+    group: docker
+    state: directory
+  ignore_errors: yes

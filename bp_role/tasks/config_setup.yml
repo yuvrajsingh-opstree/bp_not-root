@@ -1,0 +1,80 @@
+---
+- name: Get buildpiper user's GID
+  shell: "id -g {{ buildpiper_user }}"
+  register: buildpiper_gid
+
+- name: Get docker group's GID
+  shell: "getent group docker | cut -d: -f3"
+  register: docker_gid
+
+- name: Update secret_key in api.json
+  ansible.builtin.replace:
+    path: "{{ deploy_dir }}/properties/api.json"
+    regexp: '"secret_key": *"[^"]*"'
+    replace: '"secret_key": "{{ vault_secret_key }}"'
+
+- name: Update fernet_key in api.json
+  ansible.builtin.replace:
+    path: "{{ deploy_dir }}/properties/api.json"
+    regexp: '"fernet_key": *"[^"]*"'
+    replace: '"fernet_key": "{{ vault_fernet_key }}"'
+
+- name: Update group_id in api.json
+  ansible.builtin.replace:
+    path: "{{ deploy_dir }}/properties/api.json"
+    regexp: '"group_id": *\[[^]]*\]'
+    replace: '"group_id": [{{ buildpiper_gid.stdout }}, {{ docker_gid.stdout }}]'
+
+- name: Update database user
+  ansible.builtin.replace:
+    path: "{{ deploy_dir }}/properties/api.json"
+    regexp: '("databases": *{[^}]*"user": *)"[^"]*"'
+    replace: '\1"{{ vault_api_user }}"'
+
+- name: Update database password
+  ansible.builtin.replace:
+    path: "{{ deploy_dir }}/properties/api.json"
+    regexp: '("databases": *{[^}]*"password": *)"[^"]*"'
+    replace: '\1"{{ vault_api_password }}"'
+
+- name: Update tenent value in api.json
+  ansible.builtin.replace:
+    path: "{{ deploy_dir }}/properties/api.json"
+    regexp: '"tenent": *"[^"]*"'
+    replace: '"tenent": "bp"'
+
+- name: Sync latest api.json into conf.d
+  copy:
+    src: "{{ deploy_dir }}/properties/api.json"
+    dest: "{{ buildpiper_home }}/conf.d/buildpiper/api.json"
+    remote_src: yes
+    owner: "{{ buildpiper_user }}"
+    group: "{{ buildpiper_group }}"
+    mode: '0644'
+    force: yes
+
+- name: Get instance public IP
+  become: true
+  command: curl -s ip.me
+  register: public_ip
+
+- name: Update PUBLIC_API in env.json
+  become: true
+  shell: |
+    sed -i 's#"PUBLIC_API":".*"#"PUBLIC_API":"http://{{ public_ip.stdout }}:{{ api_port }}"#' {{ deploy_dir }}/properties/env.json
+
+- name: Get system hostname
+  shell: "hostname"
+  register: system_hostname
+
+- name: Update HOSTNAME, group_id, and docker_group_id in .env
+  become: true
+  shell: |
+    sed -i "s/^HOSTNAME=.*/HOSTNAME={{ system_hostname.stdout }}/" {{ deploy_dir }}/.env || echo "HOSTNAME={{ system_hostname.stdout }}" >> {{ deploy_dir }}/.env
+    sed -i "s/^group_id=.*/group_id={{ buildpiper_gid.stdout }}/" {{ deploy_dir }}/.env || echo "group_id={{ buildpiper_gid.stdout }}" >> {{ deploy_dir }}/.env
+    sed -i "s/^docker_group_id=.*/docker_group_id={{ docker_gid.stdout }}/" {{ deploy_dir }}/.env || echo "docker_group_id={{ docker_gid.stdout }}" >> {{ deploy_dir }}/.env
+
+- name: Update PUBLIC_API in runtime-env.js with instance public IP
+  become: true
+  shell: |
+    sed -i "s|\"PUBLIC_API\": \".*\"|\"PUBLIC_API\": \"http://{{ public_ip.stdout }}:{{ api_port }}/\"|" {{ deploy_dir }}/public/runtime-env.js

@@ -1,0 +1,74 @@
+---
+# Default variables for bp_role
+
+# Python configuration
+python_version: "3.12.11"
+python_src_url: "https://www.python.org/ftp/python/3.12.11/Python-3.12.11.tgz"
+
+# BuildPiper configuration
+buildpiper_user: "buildpiper"
+buildpiper_group: "buildpiper"
+buildpiper_home: "/home/buildpiper"
+deploy_dir: "/home/buildpiper/deploy_buildpiper"
+clone_dir: "/opt/deploy_buildpiper"
+
+# Repository configuration
+bitbucket_repo: "https://{{ bitbucket_user }}:{{ bitbucket_token }}@bitbucket.org/okts/deploy_buildpiper.git"
+repo_version: "bd3f61fb22870e0a76c78e6e787995f3a946ecaf"
+
+# Service ports
+api_port: "9001"
+
+# Directory structure
+buildpiper_directories:
+  - /home/buildpiper/.kube
+  - /home/buildpiper/.conf.d
+  - /home/buildpiper/.cluster_creation
+  - /home/buildpiper/.common
+  - /home/buildpiper/.codebase
+  - /home/buildpiper/.ssh
+  - /home/buildpiper/.redis
+  - /home/buildpiper/.mysql
+  - /home/buildpiper/.cache
+  - /home/buildpiper/.log/buildpiper/api
+  - /home/buildpiper/.log/buildpiper/deploy
+  - /home/buildpiper/.log/buildpiper/agent
+  - /home/buildpiper/.log/buildpiper/audit_trail
+  - /home/buildpiper/.run
+  - /home/buildpiper/.aws
+  - /home/buildpiper/conf.d/buildpiper
+  - /home/buildpiper/.agent_monitoring
+
+# Essential packages
+essential_packages:
+  - pkg-config
+  - default-libmysqlclient-dev
+  - build-essential
+  - python3-dev
+  - zlib1g-dev
+  - libncurses5-dev
+  - libgdbm-dev
+  - libnss3-dev
+  - libssl-dev
+  - libreadline-dev
+  - libffi-dev
+  - libsqlite3-dev
+  - liblzma-dev
+  - tk-dev
+  - uuid-dev
+  - curl
+  - wget
+
+# Docker prerequisites
+docker_prerequisites:
+  - apt-transport-https
+  - ca-certificates
+  - curl
+  - software-properties-common
+
+# Docker packages
+docker_packages:
+  - docker-ce
+  - docker-ce-cli
+  - containerd.io
+  - docker-compose-plugin
